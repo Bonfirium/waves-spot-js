@@ -1,4 +1,5 @@
 {
+<<<<<<< Updated upstream
   "name": "waves-spot-js",
   "version": "0.1.0",
   "description": "eee baby",
@@ -28,4 +29,36 @@
 	"2d-bicubic-interpolate": "^1.0.6",
 	"pixi.js": "^4.7.1"
   }
+=======
+	"name": "waves-spot-js",
+	"version": "0.1.0",
+	"description": "eee baby",
+	"main": "index.js",
+	"scripts": {
+		"start": "node watcher.js",
+		"build": "browserify src/matrix.js -o public/bundle.js",
+		"lint": "eslint . --fix"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/pikachain/waves-spot-js.git"
+	},
+	"author": "kolya",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/pikachain/waves-spot-js/issues"
+	},
+	"homepage": "https://github.com/pikachain/waves-spot-js#readme",
+	"devDependencies": {
+		"dev-server": "0.0.2",
+		"eslint": "^4.19.1",
+		"browserify": "^16.1.1",
+		"watchify": "^3.11.0"
+	},
+	"dependencies": {
+		"2d-bicubic-interpolate": "^1.0.6",
+		"pixi.js": "^4.7.1",
+		"vis": "^4.21.0"
+	}
+>>>>>>> Stashed changes
 }
