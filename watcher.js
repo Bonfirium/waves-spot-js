@@ -12,7 +12,8 @@ const b = browserify({
 	plugin: [ watchify ]
 });
 
-b.on('update', bundle);
-bundle();
-
 const bundle = () => b.bundle().pipe(fs.createWriteStream('./public/bundle.js'));
+
+b.on('update', bundle);
+
+bundle();
