@@ -25,6 +25,7 @@ const { mat4 } = require('gl-matrix');
 			projectionMatrix: gl.getUniformLocation(simpleShader, 'uProjectionMatrix'),
 			modelViewMatrix: gl.getUniformLocation(simpleShader, 'uModelViewMatrix'),
 			uSampler: gl.getUniformLocation(simpleShader, 'uSampler'),
+			uHeights: gl.getUniformLocation(simpleShader, 'uHeights'),
 		},
 	};
 	const buffers = initBuffers(gl);
@@ -71,6 +72,11 @@ const { mat4 } = require('gl-matrix');
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+	let heights = [];
+	for (let i = 0; i < 16; i++) {
+		heights.push(Math.random());
+	}
+	gl.uniform1fv(programInfo.uniformLocations.uHeights, new Float32Array(heights));
 	{
 		const offset = 0;
 		const type = gl.UNSIGNED_SHORT;
