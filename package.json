@@ -4,7 +4,7 @@
 	"description": "eee baby",
 	"main": "index.js",
 	"scripts": {
-		"start": "node watcher.js && DEV_SERVER_PORT=8080 DEV_SERVER_ROOT=./public dev-server",
+		"start": "concurrently --kill-others \"node watcher.js\" \"DEV_SERVER_PORT=8080 DEV_SERVER_ROOT=./public dev-server\"",
 		"build": "browserify src/app.js -o public/bundle.js",
 		"lint": "eslint . --fix"
 	},
@@ -19,14 +19,14 @@
 	},
 	"homepage": "https://github.com/pikachain/waves-spot-js#readme",
 	"devDependencies": {
+		"browserify": "^16.1.1",
+		"concurrently": "^3.5.1",
 		"dev-server": "0.0.2",
 		"eslint": "^4.19.1",
-		"browserify": "^16.1.1",
 		"watchify": "^3.11.0"
 	},
 	"dependencies": {
-		"2d-bicubic-interpolate": "^1.0.6",
-		"pixi.js": "^4.7.1",
-		"axios": "latest"
+		"axios": "latest",
+		"gl-matrix": "^2.4.0"
 	}
 }

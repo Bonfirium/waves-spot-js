@@ -1,39 +1,61 @@
+const axios = require('axios');
+const { init: initShader } = require('./shader');
+const { init: initBuffers } = require('./buffers');
+const { mat4 } = require('gl-matrix');
+
 (async () => {
-	const PIXI = require('pixi.js');
-	const ImgBack = 'images/back.png';
-	const axios = require('axios');
-
-	let type = "WebGL";
-	if (!PIXI.utils.isWebGLSupported()) {
-		console.warn("WebGL is not supported");
-		type = "canvas";
+	const canvas = document.querySelector("#glCanvas");
+	const gl = canvas.getContext("webgl");
+	if (!gl) {
+		alert("Unable to initialize WebGL. Your browser or machine may not support it.");
+		return;
 	}
-
-	let shaderCode = (await axios.get('/shaders/simple.glsl')).data;
-	let simpleShader = new PIXI.Filter(null, shaderCode);
-
-	let app = new PIXI.Application({
-		antialias: true,
-		resolution: 1
-	});
-	app.renderer.view.style.position = "absolute";
-	app.renderer.view.style.display = "block";
-	app.renderer.view.style.left = "0";
-	app.renderer.view.style.top = "0";
-	app.renderer.autoResize = true;
-	app.renderer.resize(window.innerWidth, window.innerHeight);
-	app.stage.filters = [simpleShader];
-
-	PIXI.loader
-		.add(ImgBack)
-		.load(setup);
-
-	function setup() {
-		let back = new PIXI.Sprite(PIXI.loader.resources[ImgBack].texture);
-		back.width = window.innerWidth;
-		back.height = window.innerHeight;
-		app.stage.addChild(back);
+	const simpleShader = initShader(gl,
+		(await axios.get('shaders/simple/vect.glsl')).data,
+		(await axios.get('shaders/simple/frag.glsl')).data,
+	);
+	const programInfo = {
+		program: simpleShader,
+		attribLocations: {
+			vertexPosition: gl.getAttribLocation(simpleShader, 'aVertexPosition'),
+		},
+		uniformLocations: {
+			projectionMatrix: gl.getUniformLocation(simpleShader, 'uProjectionMatrix'),
+			modelViewMatrix: gl.getUniformLocation(simpleShader, 'uModelViewMatrix'),
+		},
+	};
+	const buffers = initBuffers(gl);
+	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clearDepth(1.0);
+	gl.enable(gl.DEPTH_TEST);
+	gl.depthFunc(gl.LEQUAL);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	const fieldOfView = 45 * Math.PI / 180;
+	const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+	const zNear = 0.1;
+	const zFar = 100.0;
+	const projectionMatrix = mat4.create();
+	mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+	const modelViewMatrix = mat4.create();
+	mat4.translate(modelViewMatrix, modelViewMatrix, [-0.0, 0.0, -6.0]);
+	{
+		const numComponents = 2;
+		const type = gl.FLOAT;
+		const normalize = false;
+		const stride = 0;
+		const offset = 0;
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+		gl.vertexAttribPointer(
+			programInfo.attribLocations.vertexPosition, numComponents, type, normalize, stride, offset
+		);
+		gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 	}
-
-	document.body.appendChild(app.view);
+	gl.useProgram(programInfo.program);
+	gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
+	gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, modelViewMatrix);
+	{
+		const offset = 0;
+		const vertexCount = 4;
+		gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
+	}
 })();
