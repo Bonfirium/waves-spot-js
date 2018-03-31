@@ -1,8 +1,5 @@
-import PIXI from 'pixi.js';
-
-console.log(PIXI);
-
-import ImgBack from 'assets/images/back.png';
+const PIXI = require('pixi.js');
+const ImgBack = 'images/back.png';
 
 let type = "WebGL";
 if (!PIXI.utils.isWebGLSupported()) {
@@ -21,11 +18,11 @@ app.renderer.autoResize = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 
 PIXI.loader
-	.add(ImgBack)
-	.load(setup);
+  .add(ImgBack)
+  .load(setup);
 
 function setup() {
-	let back = new PIXI.Sprite(PIXI.loader.resources[ImgBack].texture);
+	let back = new PIXI.Sprite(PIXI.loader.resources[ ImgBack ].texture);
 	back.width = window.innerWidth;
 	back.height = window.innerHeight;
 	app.stage.addChild(back);
