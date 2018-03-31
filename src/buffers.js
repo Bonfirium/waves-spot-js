@@ -2,9 +2,9 @@ const init = (gl) => {
 	const positionBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 	const positions = [
-		640.0, 480.0,
-		0.0, 480.0,
-		640.0, 0.0,
+		1.0, 1.0,
+		0.0, 1.0,
+		1.0, 0.0,
 		0.0, 0.0,
 	];
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);

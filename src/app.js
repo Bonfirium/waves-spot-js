@@ -36,7 +36,7 @@ const { mat4 } = require('gl-matrix');
 	gl.depthFunc(gl.LEQUAL);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	const projectionMatrix = mat4.create();
-	mat4.ortho(projectionMatrix, 0, 640, 0, 480, 0.1, 100.0);
+	mat4.ortho(projectionMatrix, 0, 1, 0, 1, 0.1, 100.0);
 	const modelViewMatrix = mat4.create();
 	mat4.translate(modelViewMatrix, modelViewMatrix, [-0.0, 0.0, -6.0]);
 	{
