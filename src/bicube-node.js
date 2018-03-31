@@ -23,5 +23,5 @@ const data = [
 	}
 ];
 console.log(interpolateArray);
-console.log(fs);
+console.log(2);
 console.log(interpolateArray(data, 1));
