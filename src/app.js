@@ -73,7 +73,7 @@ const { mat4 } = require('gl-matrix');
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
 	let heights = [];
-	for (let i = 0; i < 16; i++) {
+	for (let i = 0; i < 25; i++) {
 		heights.push(Math.random());
 	}
 	gl.uniform1fv(programInfo.uniformLocations.uHeights, new Float32Array(heights));
