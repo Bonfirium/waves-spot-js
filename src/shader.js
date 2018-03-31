@@ -22,7 +22,6 @@ const init = (gl, vsSource, fsSource) => {
 		alert('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
 		return null;
 	}
-
 	return shaderProgram;
 };
 
