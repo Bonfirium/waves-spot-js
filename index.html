@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>waves-spot Demo</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0
+        }
+    </style>
+</head>
+
+<script src="pixi/pixi.min.js"></script>
+
+<body>
+</body>
+
+<script type="text/javascript">
+	let type = "WebGL";
+	if (!PIXI.utils.isWebGLSupported()) {
+		type = "canvas";
+	}
+
+	let app = new PIXI.Application({
+		antialias: true,
+		resolution: 1
+	});
+	app.renderer.view.style.position = "absolute";
+	app.renderer.view.style.display = "block";
+	app.renderer.view.style.left = "0";
+	app.renderer.view.style.top = "0";
+	app.renderer.autoResize = true;
+	app.renderer.resize(window.innerWidth, window.innerHeight);
+
+	PIXI.loader
+		.add("assets/images/back.jpg")
+		.load(setup);
+
+	function setup() {
+		let back = new PIXI.Sprite(PIXI.loader.resources["assets/images/back.jpg"].texture);
+		back.width = window.innerWidth;
+		back.height = window.innerHeight;
+		app.stage.addChild(back);
+	}
+
+	document.body.appendChild(app.view);
+</script>
+
+</html>
