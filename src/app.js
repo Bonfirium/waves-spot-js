@@ -18,11 +18,11 @@ app.renderer.autoResize = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 
 PIXI.loader
-  .add(ImgBack)
-  .load(setup);
+	.add(ImgBack)
+	.load(setup);
 
 function setup() {
-	let back = new PIXI.Sprite(PIXI.loader.resources[ ImgBack ].texture);
+	let back = new PIXI.Sprite(PIXI.loader.resources[ImgBack].texture);
 	back.width = window.innerWidth;
 	back.height = window.innerHeight;
 	app.stage.addChild(back);
