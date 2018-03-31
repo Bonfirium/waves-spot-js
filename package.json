@@ -19,5 +19,8 @@
   "homepage": "https://github.com/pikachain/waves-spot-js#readme",
   "devDependencies": {
     "eslint": "^4.19.1"
+  },
+  "dependencies": {
+    "2d-bicubic-interpolate": "^1.0.6"
   }
 }
