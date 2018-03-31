@@ -26,6 +26,7 @@
 	},
 	"dependencies": {
 		"2d-bicubic-interpolate": "^1.0.6",
-		"pixi.js": "^4.7.1"
+		"pixi.js": "^4.7.1",
+		"axios": "latest"
 	}
 }
