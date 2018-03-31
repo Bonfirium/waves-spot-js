@@ -4,6 +4,17 @@ const { init: initBuffers } = require('./buffers');
 const { load: loadTexture } = require('./texture');
 const { mat4 } = require('gl-matrix');
 
+const render = (gl, programInfo, heights) => {
+	for (let i = 0; i < 25; i++) {
+		heights[i] = Math.min(1.0, Math.max(0.0, heights[i] + (Math.random() - 0.5) / 10));
+	}
+	gl.uniform1fv(programInfo.uniformLocations.uHeights, new Float32Array(heights));
+	const offset = 0;
+	const type = gl.UNSIGNED_SHORT;
+	const vertexCount = 6;
+	gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
+};
+
 (async () => {
 	const canvas = document.querySelector("#glCanvas");
 	const gl = canvas.getContext("webgl");
@@ -76,11 +87,5 @@ const { mat4 } = require('gl-matrix');
 	for (let i = 0; i < 25; i++) {
 		heights.push(Math.random());
 	}
-	gl.uniform1fv(programInfo.uniformLocations.uHeights, new Float32Array(heights));
-	{
-		const offset = 0;
-		const type = gl.UNSIGNED_SHORT;
-		const vertexCount = 6;
-		gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
-	}
+	setInterval(() => render(gl, programInfo, heights), 17);
 })();
