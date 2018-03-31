@@ -4,23 +4,24 @@
   "description": "eee baby",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint . --fix"
+	"build": "browserify src/app.js -o public/bundle.js",
+	"lint": "eslint . --fix"
   },
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/pikachain/waves-spot-js.git"
+	"type": "git",
+	"url": "git+https://github.com/pikachain/waves-spot-js.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/pikachain/waves-spot-js/issues"
+	"url": "https://github.com/pikachain/waves-spot-js/issues"
   },
   "homepage": "https://github.com/pikachain/waves-spot-js#readme",
   "devDependencies": {
-    "eslint": "^4.19.1"
+	"eslint": "^4.19.1"
   },
   "dependencies": {
-    "2d-bicubic-interpolate": "^1.0.6"
+	"pixi.js": "^4.7.1",
+	"2d-bicubic-interpolate": "^1.0.6"
   }
 }
