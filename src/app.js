@@ -13,8 +13,8 @@ let btnPrev = null;
 let btnNext = null;
 
 const SHADER_CONFIG = {
-	$WIDTH$: 16,
-	$HEIGHT$: 16
+	$WIDTH$: 7,
+	$HEIGHT$: 7
 };
 SHADER_CONFIG.$WIDTH_1$ = SHADER_CONFIG.$WIDTH$ + 1;
 SHADER_CONFIG.$HEIGHT_1$ = SHADER_CONFIG.$HEIGHT$ + 1;

@@ -11,7 +11,7 @@ const load = (gl, url) => {
 		const border = 0;
 		const srcFormat = gl.RGBA;
 		const srcType = gl.UNSIGNED_BYTE;
-		const pixel = new Uint8Array([0, 0, 1024, 1024]);
+		const pixel = new Uint8Array([0, 0, 256, 256]);
 		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
 		const image = new Image();
 		image.onload = function () {
@@ -40,7 +40,7 @@ const initTarget = (gl) => {
 		const format = gl.RGBA;
 		const type = gl.UNSIGNED_BYTE;
 		const data = null;
-		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 256, 256, border, format, type, data);
+		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 990, 990, border, format, type, data);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
