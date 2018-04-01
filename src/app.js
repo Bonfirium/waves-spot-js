@@ -24,7 +24,7 @@ SHADER_CONFIG.$AREA_1$ = SHADER_CONFIG.$WIDTH_1$ * SHADER_CONFIG.$HEIGHT_1$;
 
 const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, posses) => {
 	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
-		posses[i] += Math.random() * Math.PI / 8;
+		posses[i] += Math.random() * Math.PI / 13;
 	}
 	gl.bindFramebuffer(gl.FRAMEBUFFER, interpolationTargetFrameBuffer);
 	// gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -110,7 +110,7 @@ const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, p
 	gl.depthFunc(gl.LEQUAL);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	projectionMatrix = mat4.create();
-	mat4.ortho(projectionMatrix, 0, 1, 0, 1, 0.1, 100.0);
+	mat4.ortho(projectionMatrix, 0, 1, 1, 0, 0.1, 100.0);
 	modelViewMatrix = mat4.create();
 	mat4.translate(modelViewMatrix, modelViewMatrix, [-0.0, 0.0, -6.0]);
 
@@ -135,7 +135,7 @@ const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, p
 	interpolationTargetTexture = interpolationTarget.targetTexture;
 	interpolationTargetFrameBuffer = interpolationTarget.targetFrameBuffer;
 
-	const texture1 = await loadTexture(gl, 'images/texture1.png'); // 1
+	const texture1 = await loadTexture(gl, 'images/texture3.png'); // 1
 
 	gl.useProgram(normalizerShader.program);
 	gl.uniform1i(normalizerShader.uniformLocations.uSamplerInterpolated, 0);

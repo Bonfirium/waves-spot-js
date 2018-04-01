@@ -9,7 +9,7 @@ const float yd = p / 2.0;
 const float offset_power = 0.01;
 const vec3 lightDirection = normalize(vec3(1.0, -1.0, 1.0));
 const float halfPI = 3.1415926535 / 2.0;
-const vec4 lightColor = vec4(0.62, 0.86, 1.0, 0.7);
+const vec4 lightColor = vec4(0.62, 0.86, 1.0, 0.45);
 const vec4 skyColor = vec4(0.26, 0.7, 0.95, 0.7);
 
 void main(void) {
@@ -30,7 +30,14 @@ void main(void) {
 	vec3 b = v3 - v2;
 	vec3 normal = normalize(cross(a, b));
 
-	gl_FragColor = texture2D(uSamplerOriginal, vTextureCoord + normal.xy * offset_power);
+	vec2 res = vTextureCoord + normal.xy * offset_power;
+
+	if (res.x < 0.0 || res.x > 1.0 || res.y < 0.0 || res.y > 1.0) {
+		gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+		return;
+	}
+
+	gl_FragColor = texture2D(uSamplerOriginal, res);
 	float angle = acos(dot(normal, lightDirection));
 	if (angle < halfPI) {
 		float al = 1.0 - angle / halfPI;
