@@ -2,6 +2,7 @@ varying highp vec2 vTextureCoord;
 uniform sampler2D uSamplerInterpolated;
 uniform sampler2D uSamplerOriginal;
 uniform int uGlareType;
+uniform int uIsCutted;
 precision highp float;
 
 const float p = 0.2;
@@ -10,14 +11,19 @@ const float yd = p / 2.0;
 const float offset_power = 0.02;
 const vec3 lightDirection = normalize(vec3(1.0, -1.0, 1.0));
 const float halfPI = 3.1415926535 / 2.0;
-const vec4 lightColor = vec4(1.0, 1.0, 1.0, 0.7);
+const vec4 lightColor = vec4(0.62, 0.86, 1.0, 0.7);
 const vec4 darkColor = vec4(-0.62, -0.86, -1.0, 0.45);
-const vec4 skyColor = vec4(0.26, 0.7, 0.95, 0.45);
+const vec4 skyColor = vec4(0.26, 0.7, 0.95, 1.0);
 
 void main(void) {
 	float x, y;
 
-	vec2 coord = vTextureCoord * 1.1 - 0.05;
+	vec2 coord;
+	if (uIsCutted == 1) {
+		coord = vTextureCoord * 0.9 + 0.05;
+	} else {
+		coord = vTextureCoord * 1.1 - 0.05;
+	}
 
 	x = coord.x;
 	y = coord.y - p;
@@ -57,9 +63,9 @@ void main(void) {
 		vec3 nrgb = (1.0 - gl_FragColor.rgb) * al;
 		gl_FragColor = gl_FragColor + vec4(nrgb * cl.rgb * cl.a, 0.0);
 	} else {
-//		float al = angle / halfPI - 1.0;
-//		vec3 nrgb = (1.0 - gl_FragColor.rgb) * al;
-//		gl_FragColor = gl_FragColor + vec4(nrgb * skyColor.rgb * skyColor.a, 0.0);
+		float al = angle / halfPI - 1.0;
+		vec3 nrgb = (1.0 - gl_FragColor.rgb) * al;
+		gl_FragColor = gl_FragColor + vec4(nrgb * skyColor.rgb * skyColor.a, 0.0);
 	}
 	gl_FragColor.a = originAlpha;
 //	gl_FragColor = gl_FragColor + vec4((1.0 - gl_FragColor.rgb) * (normal.x * 2.0), 1.0);

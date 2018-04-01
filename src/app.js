@@ -29,11 +29,11 @@ const GLARES_TYPE = {
 };
 
 const images = [
-	{ id: 'texture1.png', glares: GLARES_TYPE.DEFAULT },
-	{ id: 'texture2.png', glares: GLARES_TYPE.DEFAULT },
-	{ id: 'texture3.png', glares: GLARES_TYPE.DARK },
 	{ id: 'texture4.png', glares: GLARES_TYPE.DARK },
-	{ id: 'texture5.png', glares: GLARES_TYPE.NONE },
+	{ id: 'texture3.png', glares: GLARES_TYPE.DARK },
+	{ id: 'texture1.png', glares: GLARES_TYPE.DEFAULT, isCutted: true },
+	{ id: 'texture2.png', glares: GLARES_TYPE.DEFAULT, isCutted: true },
+	// { id: 'texture5.png', glares: GLARES_TYPE.NONE },
 	{ id: 'texture6.png', glares: GLARES_TYPE.NONE },
 ];
 let currentImageIndex = 0;
@@ -53,6 +53,7 @@ const render = (gl, { interpolateShader, normalizerShader }, posses, spds) => {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.useProgram(normalizerShader.program);
 	gl.uniform1i(normalizerShader.uniformLocations.uGlareType, images[currentImageIndex].glares);
+	gl.uniform1i(normalizerShader.uniformLocations.uIsCutted, images[currentImageIndex].isCutted === true ? 1 : 0);
 	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 };
 
@@ -83,7 +84,7 @@ const changeImage = async (gl, imageIndex) => {
 };
 
 (async () => {
-	const canvas = document.querySelector("#glCanvas");
+	const canvas = document.querySelector("#waves-spot-content");
 	const gl = canvas.getContext("webgl");
 	if (!gl) {
 		alert("Unable to initialize WebGL. Your browser or machine may not support it.");
@@ -123,6 +124,7 @@ const changeImage = async (gl, imageIndex) => {
 			uSamplerInterpolated: gl.getUniformLocation(normalizerFilter, 'uSamplerInterpolated'),
 			uSamplerOriginal: gl.getUniformLocation(normalizerFilter, 'uSamplerOriginal'),
 			uGlareType: gl.getUniformLocation(normalizerFilter, 'uGlareType'),
+			uIsCutted: gl.getUniformLocation(normalizerFilter, 'uIsCutted'),
 		},
 	};
 	buffers = initBuffers(gl);
