@@ -9,6 +9,8 @@ let interpolationTargetFrameBuffer = null;
 let buffers = null;
 let projectionMatrix = null;
 let modelViewMatrix = null;
+let btnPrev = null;
+let btnNext = null;
 
 const SHADER_CONFIG = {
 	$WIDTH$: 16,
@@ -20,8 +22,21 @@ SHADER_CONFIG.$LESS_WIDTH$ = SHADER_CONFIG.$WIDTH$ - 1;
 SHADER_CONFIG.$LESS_HEIGHT$ = SHADER_CONFIG.$HEIGHT$ - 1;
 SHADER_CONFIG.$AREA_1$ = SHADER_CONFIG.$WIDTH_1$ * SHADER_CONFIG.$HEIGHT_1$;
 
-const images = ['texture1.png', 'texture2.png', 'texture3.png', 'texture4.png', 'texture5.png', 'texture6.png'];
-let currentImageIndex = 1;
+const GLARES_TYPE = {
+	NONE: 0,
+	DEFAULT: 1,
+	DARK: 2,
+};
+
+const images = [
+	{ id: 'texture1.png', glares: GLARES_TYPE.DEFAULT },
+	{ id: 'texture2.png', glares: GLARES_TYPE.DEFAULT },
+	{ id: 'texture3.png', glares: GLARES_TYPE.DARK },
+	{ id: 'texture4.png', glares: GLARES_TYPE.DARK },
+	{ id: 'texture5.png', glares: GLARES_TYPE.NONE },
+	{ id: 'texture6.png', glares: GLARES_TYPE.NONE },
+];
+let currentImageIndex = 0;
 let texture = null;
 
 const render = (gl, { interpolateShader, normalizerShader }, posses, spds) => {
@@ -37,6 +52,7 @@ const render = (gl, { interpolateShader, normalizerShader }, posses, spds) => {
 
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.useProgram(normalizerShader.program);
+	gl.uniform1i(normalizerShader.uniformLocations.uGlareType, images[currentImageIndex].glares);
 	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 };
 
@@ -53,7 +69,7 @@ const changeImage = async (gl, imageIndex) => {
 		result.onload = function () {
 			resolve(result)
 		};
-		result.src = `images/${images[imageIndex]}`;
+		result.src = `images/${images[imageIndex].id}`;
 	});
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
@@ -106,6 +122,7 @@ const changeImage = async (gl, imageIndex) => {
 			modelViewMatrix: gl.getUniformLocation(normalizerFilter, 'uModelViewMatrix'),
 			uSamplerInterpolated: gl.getUniformLocation(normalizerFilter, 'uSamplerInterpolated'),
 			uSamplerOriginal: gl.getUniformLocation(normalizerFilter, 'uSamplerOriginal'),
+			uGlareType: gl.getUniformLocation(normalizerFilter, 'uGlareType'),
 		},
 	};
 	buffers = initBuffers(gl);
@@ -141,7 +158,7 @@ const changeImage = async (gl, imageIndex) => {
 	interpolationTargetTexture = interpolationTarget.targetTexture;
 	interpolationTargetFrameBuffer = interpolationTarget.targetFrameBuffer;
 
-	texture = await loadTexture(gl, `images/${images[currentImageIndex]}`); // 1
+	texture = await loadTexture(gl, `images/${images[currentImageIndex].id}`); // 1
 
 	gl.useProgram(normalizerShader.program);
 	gl.uniform1i(normalizerShader.uniformLocations.uSamplerInterpolated, 0);
@@ -160,11 +177,13 @@ const changeImage = async (gl, imageIndex) => {
 	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
 		spds.push((Math.random() - 0.5) * 0.16);
 	}
-	document.querySelector('#btnNext').onclick = (e) => {
+	btnNext = document.querySelector('#btnNext');
+	btnNext.onclick = (e) => {
 		e.preventDefault();
 		changeImage(gl, (currentImageIndex + 1) % images.length);
 	};
-	document.querySelector('#btnPrev').onclick = (e) => {
+	btnPrev = document.querySelector('#btnPrev');
+	btnPrev.onclick = (e) => {
 		e.preventDefault();
 		changeImage(gl, (currentImageIndex + images.length - 1) % images.length);
 	};
