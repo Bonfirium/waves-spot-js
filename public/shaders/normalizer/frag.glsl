@@ -8,7 +8,7 @@ precision highp float;
 const float p = 0.2;
 const float xd = p * sqrt(3.0) / 2.0;
 const float yd = p / 2.0;
-const float offset_power = 0.02;
+const float offset_power = 0.05;
 const vec3 lightDirection = normalize(vec3(1.0, -1.0, 1.0));
 const float halfPI = 3.1415926535 / 2.0;
 const vec4 lightColor = vec4(0.62, 0.86, 1.0, 0.7);

@@ -13,8 +13,8 @@ let btnPrev = null;
 let btnNext = null;
 
 const SHADER_CONFIG = {
-	$WIDTH$: 7,
-	$HEIGHT$: 7
+	$WIDTH$: 4,
+	$HEIGHT$: 4
 };
 SHADER_CONFIG.$WIDTH_1$ = SHADER_CONFIG.$WIDTH$ + 1;
 SHADER_CONFIG.$HEIGHT_1$ = SHADER_CONFIG.$HEIGHT$ + 1;
@@ -44,7 +44,7 @@ let texture = null;
 
 const render = (gl, { interpolateShader, normalizerShader }, posses, spds) => {
 	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
-		spds[i] = Math.min(0.16, Math.max(-0.16, spds[i] + (Math.random() - 0.5) * 0.04));
+		spds[i] = Math.min(0.4, Math.max(-0.4, spds[i] + (Math.random() - 0.5) * 0.01));
 		posses[i] += spds[i];
 	}
 	if (images[currentImageIndex] === null) {
