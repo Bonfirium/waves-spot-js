@@ -40,6 +40,11 @@ void main(void) {
 	vec3 b = v3 - v2;
 	vec3 normal = normalize(cross(a, b));
 
+	if (uGlareType == 3) {
+		gl_FragColor = vec4(normal.x, normal.z, normal.y, 1.0);
+		return;
+	}
+
 	vec2 res = coord + normal.xy * offset_power;
 
 	if (res.x < 0.0 || res.x > 1.0 || res.y < 0.0 || res.y > 1.0) {

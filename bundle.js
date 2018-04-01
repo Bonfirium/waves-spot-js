@@ -8534,8 +8534,8 @@ let btnPrev = null;
 let btnNext = null;
 
 const SHADER_CONFIG = {
-	$WIDTH$: 16,
-	$HEIGHT$: 16
+	$WIDTH$: 7,
+	$HEIGHT$: 7
 };
 SHADER_CONFIG.$WIDTH_1$ = SHADER_CONFIG.$WIDTH$ + 1;
 SHADER_CONFIG.$HEIGHT_1$ = SHADER_CONFIG.$HEIGHT$ + 1;
@@ -8547,11 +8547,14 @@ const GLARES_TYPE = {
 	NONE: 0,
 	DEFAULT: 1,
 	DARK: 2,
+	DEMO: 3,
 };
 
 const images = [
-	{ id: 'texture4.png', glares: GLARES_TYPE.DARK },
 	{ id: 'texture3.png', glares: GLARES_TYPE.DARK },
+	null,
+	{ id: null, glares: GLARES_TYPE.DEMO },
+	{ id: 'texture4.png', glares: GLARES_TYPE.DARK },
 	{ id: 'texture1.png', glares: GLARES_TYPE.DEFAULT, isCutted: true },
 	{ id: 'texture2.png', glares: GLARES_TYPE.DEFAULT, isCutted: true },
 	// { id: 'texture5.png', glares: GLARES_TYPE.NONE },
@@ -8565,12 +8568,18 @@ const render = (gl, { interpolateShader, normalizerShader }, posses, spds) => {
 		spds[i] = Math.min(0.16, Math.max(-0.16, spds[i] + (Math.random() - 0.5) * 0.04));
 		posses[i] += spds[i];
 	}
-	gl.bindFramebuffer(gl.FRAMEBUFFER, interpolationTargetFrameBuffer);
-	// gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	if (images[currentImageIndex] === null) {
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	} else {
+		gl.bindFramebuffer(gl.FRAMEBUFFER, interpolationTargetFrameBuffer);
+	}
 	gl.useProgram(interpolateShader.program);
 	gl.uniform1fv(interpolateShader.uniformLocations.uHeights, new Float32Array(posses.map((pos) => Math.sin(pos) / 2 + 0.5)));
 	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
+	if (images[currentImageIndex] === null) {
+		return;
+	}
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.useProgram(normalizerShader.program);
 	gl.uniform1i(normalizerShader.uniformLocations.uGlareType, images[currentImageIndex].glares);
@@ -8586,6 +8595,9 @@ const changeImage = async (gl, imageIndex) => {
 		return;
 	}
 	currentImageIndex = imageIndex;
+	if (images[currentImageIndex] === null || images[currentImageIndex].id === null) {
+		return;
+	}
 	let image = await new Promise((resolve) => {
 		const result = new Image();
 		result.onload = function () {
@@ -8805,7 +8817,7 @@ const load = (gl, url) => {
 		const border = 0;
 		const srcFormat = gl.RGBA;
 		const srcType = gl.UNSIGNED_BYTE;
-		const pixel = new Uint8Array([0, 0, 1024, 1024]);
+		const pixel = new Uint8Array([0, 0, 256, 256]);
 		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
 		const image = new Image();
 		image.onload = function () {
@@ -8834,7 +8846,7 @@ const initTarget = (gl) => {
 		const format = gl.RGBA;
 		const type = gl.UNSIGNED_BYTE;
 		const data = null;
-		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 256, 256, border, format, type, data);
+		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 990, 990, border, format, type, data);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
