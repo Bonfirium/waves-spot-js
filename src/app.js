@@ -10,9 +10,19 @@ let buffers = null;
 let projectionMatrix = null;
 let modelViewMatrix = null;
 
+const SHADER_CONFIG = {
+	$WIDTH$: 16,
+	$HEIGHT$: 16
+};
+SHADER_CONFIG.$WIDTH_1$ = SHADER_CONFIG.$WIDTH$ + 1;
+SHADER_CONFIG.$HEIGHT_1$ = SHADER_CONFIG.$HEIGHT$ + 1;
+SHADER_CONFIG.$LESS_WIDTH$ = SHADER_CONFIG.$WIDTH$ - 1;
+SHADER_CONFIG.$LESS_HEIGHT$ = SHADER_CONFIG.$HEIGHT$ - 1;
+SHADER_CONFIG.$AREA_1$ = SHADER_CONFIG.$WIDTH_1$ * SHADER_CONFIG.$HEIGHT_1$;
+
 const render = (gl, { interpolateShader, combinationShader }, posses) => {
-	for (let i = 0; i < 25; i++) {
-		posses[i] += Math.random() * Math.PI / 30;
+	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
+		posses[i] += Math.random() * Math.PI / 60;
 	}
 	gl.bindFramebuffer(gl.FRAMEBUFFER, targetFrameBuffer);
 	gl.useProgram(interpolateShader.program);
@@ -37,6 +47,7 @@ const render = (gl, { interpolateShader, combinationShader }, posses) => {
 	const interpolateFilter = initShader(gl,
 		(await axios.get('shaders/interpolate/vect.glsl')).data,
 		(await axios.get('shaders/interpolate/frag.glsl')).data,
+		SHADER_CONFIG
 	);
 	const interpolateShader = {
 		program: interpolateFilter,
@@ -53,6 +64,7 @@ const render = (gl, { interpolateShader, combinationShader }, posses) => {
 	const combinationFilter = initShader(gl,
 		(await axios.get('shaders/combination/vect.glsl')).data,
 		(await axios.get('shaders/combination/frag.glsl')).data,
+		SHADER_CONFIG
 	);
 	const combinationShader = {
 		program: combinationFilter,
@@ -136,7 +148,7 @@ const render = (gl, { interpolateShader, combinationShader }, posses) => {
 	gl.bindTexture(gl.TEXTURE_2D, texture2);
 
 	let posses = [];
-	for (let i = 0; i < 25; i++) {
+	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
 		posses.push(Math.random() * Math.PI * 2);
 	}
 	setInterval(() => render(gl, { interpolateShader, combinationShader }, posses), 17);

@@ -1,5 +1,10 @@
 
-const loadShader = (gl, type, source) => {
+const loadShader = (gl, type, source, config) => {
+	Object.keys(config).forEach((configName) => {
+		source = source.split(`${configName}f`).join(config[configName].toFixed(8));
+		source = source.split(`${configName}i`).join(config[configName]);
+	});
+	console.log(source);
 	const shader = gl.createShader(type);
 	gl.shaderSource(shader, source);
 	gl.compileShader(shader);
@@ -11,9 +16,9 @@ const loadShader = (gl, type, source) => {
 	return shader;
 };
 
-const init = (gl, vsSource, fsSource) => {
-	const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
-	const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+const init = (gl, vsSource, fsSource, config) => {
+	const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource, config);
+	const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource, config);
 	const shaderProgram = gl.createProgram();
 	gl.attachShader(shaderProgram, vertexShader);
 	gl.attachShader(shaderProgram, fragmentShader);
