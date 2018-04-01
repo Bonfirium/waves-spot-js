@@ -4,15 +4,28 @@ const { init: initBuffers } = require('./buffers');
 const { load: loadTexture } = require('./texture');
 const { mat4 } = require('gl-matrix');
 
-const render = (gl, programInfo, heights) => {
+let targetTexture = null;
+let targetFrameBuffer = null;
+let buffers = null;
+let projectionMatrix = null;
+let modelViewMatrix = null;
+
+const render = (gl, { interpolateShader, combinationShader }, heights) => {
 	for (let i = 0; i < 25; i++) {
 		heights[i] = Math.min(1.0, Math.max(0.0, heights[i] + (Math.random() - 0.5) / 10));
 	}
-	gl.uniform1fv(programInfo.uniformLocations.uHeights, new Float32Array(heights));
-	const offset = 0;
-	const type = gl.UNSIGNED_SHORT;
-	const vertexCount = 6;
-	gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, targetFrameBuffer);
+	gl.useProgram(interpolateShader.program);
+	{
+		gl.uniform1fv(interpolateShader.uniformLocations.uHeights, new Float32Array(heights));
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	}
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	gl.useProgram(combinationShader.program);
+	{
+		gl.bindTexture(gl.TEXTURE_2D, targetTexture);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	}
 };
 
 (async () => {
@@ -22,70 +35,96 @@ const render = (gl, programInfo, heights) => {
 		alert("Unable to initialize WebGL. Your browser or machine may not support it.");
 		return;
 	}
-	const simpleShader = initShader(gl,
-		(await axios.get('shaders/simple/vect.glsl')).data,
-		(await axios.get('shaders/simple/frag.glsl')).data,
+	const interpolateFilter = initShader(gl,
+		(await axios.get('shaders/interpolate/vect.glsl')).data,
+		(await axios.get('shaders/interpolate/frag.glsl')).data,
 	);
-	const programInfo = {
-		program: simpleShader,
+	const interpolateShader = {
+		program: interpolateFilter,
 		attribLocations: {
-			vertexPosition: gl.getAttribLocation(simpleShader, 'aVertexPosition'),
-			textureCoord: gl.getAttribLocation(simpleShader, 'aTextureCoord'),
+			vertexPosition: gl.getAttribLocation(interpolateFilter, 'aVertexPosition'),
+			textureCoord: gl.getAttribLocation(interpolateFilter, 'aTextureCoord'),
 		},
 		uniformLocations: {
-			projectionMatrix: gl.getUniformLocation(simpleShader, 'uProjectionMatrix'),
-			modelViewMatrix: gl.getUniformLocation(simpleShader, 'uModelViewMatrix'),
-			uSampler: gl.getUniformLocation(simpleShader, 'uSampler'),
-			uHeights: gl.getUniformLocation(simpleShader, 'uHeights'),
+			projectionMatrix: gl.getUniformLocation(interpolateFilter, 'uProjectionMatrix'),
+			modelViewMatrix: gl.getUniformLocation(interpolateFilter, 'uModelViewMatrix'),
+			uSampler: gl.getUniformLocation(interpolateFilter, 'uSampler'),
+			uHeights: gl.getUniformLocation(interpolateFilter, 'uHeights'),
 		},
 	};
-	const buffers = initBuffers(gl);
-	const texture = await loadTexture(gl, 'images/back.png');
+	const combinationFilter = initShader(gl,
+		(await axios.get('shaders/combination/vect.glsl')).data,
+		(await axios.get('shaders/combination/frag.glsl')).data,
+	);
+	const combinationShader = {
+		program: combinationFilter,
+		attribLocations: {
+			vertexPosition: gl.getAttribLocation(combinationFilter, 'aVertexPosition'),
+			textureCoord: gl.getAttribLocation(combinationFilter, 'aTextureCoord'),
+		},
+		uniformLocations: {
+			projectionMatrix: gl.getUniformLocation(combinationFilter, 'uProjectionMatrix'),
+			modelViewMatrix: gl.getUniformLocation(combinationFilter, 'uModelViewMatrix'),
+			uSampler: gl.getUniformLocation(combinationFilter, 'uSampler'),
+		},
+	};
+	buffers = initBuffers(gl);
+	// const texture = await loadTexture(gl, 'images/back.png');
 
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.clearDepth(1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	const projectionMatrix = mat4.create();
+	projectionMatrix = mat4.create();
 	mat4.ortho(projectionMatrix, 0, 1, 0, 1, 0.1, 100.0);
-	const modelViewMatrix = mat4.create();
+	modelViewMatrix = mat4.create();
 	mat4.translate(modelViewMatrix, modelViewMatrix, [-0.0, 0.0, -6.0]);
-	{
-		const numComponents = 2;
-		const type = gl.FLOAT;
-		const normalize = false;
-		const stride = 0;
-		const offset = 0;
-		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-		gl.vertexAttribPointer(
-			programInfo.attribLocations.vertexPosition, numComponents, type, normalize, stride, offset
-		);
-		gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
-	}
-	{
-		const numComponents = 2;
-		const type = gl.FLOAT;
-		const normalize = false;
-		const stride = 0;
-		const offset = 0;
-		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureCoord);
-		gl.vertexAttribPointer(
-			programInfo.attribLocations.textureCoord, numComponents, type, normalize, stride, offset
-		);
-		gl.enableVertexAttribArray(programInfo.attribLocations.textureCoord);
-	}
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
 
-	gl.useProgram(programInfo.program);
-	gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
-	gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, modelViewMatrix);
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+	[interpolateShader, combinationShader].forEach((shader) => {
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+		gl.vertexAttribPointer(shader.attribLocations.vertexPosition, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(shader.attribLocations.vertexPosition);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureCoord);
+		gl.vertexAttribPointer(shader.attribLocations.textureCoord, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(shader.attribLocations.textureCoord);
+	});
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
+	[interpolateShader, combinationShader].forEach((shader) => {
+		gl.useProgram(shader.program);
+		gl.uniformMatrix4fv(shader.uniformLocations.projectionMatrix, false, projectionMatrix);
+		gl.uniformMatrix4fv(shader.uniformLocations.modelViewMatrix, false, modelViewMatrix);
+	});
+
+	targetTexture = gl.createTexture();
+	gl.uniform1i(combinationShader.uniformLocations.uSampler, 0);
+	gl.bindTexture(gl.TEXTURE_2D, targetTexture);
+	{
+		const level = 0;
+		const internalFormat = gl.RGBA;
+		const border = 0;
+		const format = gl.RGBA;
+		const type = gl.UNSIGNED_BYTE;
+		const data = null;
+		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 256, 256, border, format, type, data);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	}
+
+	targetFrameBuffer = gl.createFramebuffer();
+	gl.bindFramebuffer(gl.FRAMEBUFFER, targetFrameBuffer);
+	const attachmentPoint = gl.COLOR_ATTACHMENT0;
+	const level = 0;
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, targetTexture, level);
+	// gl.activeTexture(gl.TEXTURE0);
+	// gl.bindTexture(gl.TEXTURE_2D, texture);
 	let heights = [];
 	for (let i = 0; i < 25; i++) {
 		heights.push(Math.random());
 	}
-	setInterval(() => render(gl, programInfo, heights), 17);
+	setInterval(() => render(gl, { interpolateShader, combinationShader }, heights), 17);
 })();
