@@ -10,14 +10,14 @@ let buffers = null;
 let projectionMatrix = null;
 let modelViewMatrix = null;
 
-const render = (gl, { interpolateShader, combinationShader }, heights) => {
+const render = (gl, { interpolateShader, combinationShader }, posses) => {
 	for (let i = 0; i < 25; i++) {
-		heights[i] = Math.min(1.0, Math.max(0.0, heights[i] + (Math.random() - 0.5) / 10));
+		posses[i] += Math.random() * Math.PI / 30;
 	}
 	gl.bindFramebuffer(gl.FRAMEBUFFER, targetFrameBuffer);
 	gl.useProgram(interpolateShader.program);
 	{
-		gl.uniform1fv(interpolateShader.uniformLocations.uHeights, new Float32Array(heights));
+		gl.uniform1fv(interpolateShader.uniformLocations.uHeights, new Float32Array(posses.map((pos) => Math.sin(pos) / 2 + 0.5)));
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 	}
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -135,9 +135,9 @@ const render = (gl, { interpolateShader, combinationShader }, heights) => {
 	gl.activeTexture(gl.TEXTURE2);
 	gl.bindTexture(gl.TEXTURE_2D, texture2);
 
-	let heights = [];
+	let posses = [];
 	for (let i = 0; i < 25; i++) {
-		heights.push(Math.random());
+		posses.push(Math.random() * Math.PI * 2);
 	}
-	setInterval(() => render(gl, { interpolateShader, combinationShader }, heights), 17);
+	setInterval(() => render(gl, { interpolateShader, combinationShader }, posses), 17);
 })();
