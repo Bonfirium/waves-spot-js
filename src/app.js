@@ -1,13 +1,11 @@
 const axios = require('axios');
 const { init: initShader } = require('./shader');
 const { init: initBuffers } = require('./buffers');
-const { load: loadTexture, initTarget: initTargetTexture } = require('./texture');
+const { load: loadTexture, initTarget: initTargetTexture, isPowerOf2 } = require('./texture');
 const { mat4 } = require('gl-matrix');
 
 let interpolationTargetTexture = null;
 let interpolationTargetFrameBuffer = null;
-let normalizerTargetTexture = null;
-let normalizerTargetFrameBuffer = null;
 let buffers = null;
 let projectionMatrix = null;
 let modelViewMatrix = null;
@@ -22,7 +20,11 @@ SHADER_CONFIG.$LESS_WIDTH$ = SHADER_CONFIG.$WIDTH$ - 1;
 SHADER_CONFIG.$LESS_HEIGHT$ = SHADER_CONFIG.$HEIGHT$ - 1;
 SHADER_CONFIG.$AREA_1$ = SHADER_CONFIG.$WIDTH_1$ * SHADER_CONFIG.$HEIGHT_1$;
 
-const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, posses) => {
+const images = ['texture1.png', 'texture2.png', 'texture3.png'];
+let currentImageIndex = 1;
+let texture = null;
+
+const render = (gl, { interpolateShader, normalizerShader }, posses) => {
 	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
 		posses[i] += Math.random() * Math.PI / 13;
 	}
@@ -32,14 +34,35 @@ const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, p
 	gl.uniform1fv(interpolateShader.uniformLocations.uHeights, new Float32Array(posses.map((pos) => Math.sin(pos) / 2 + 0.5)));
 	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
-	// gl.bindFramebuffer(gl.FRAMEBUFFER, normalizerTargetFrameBuffer);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.useProgram(normalizerShader.program);
 	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+};
 
-	// gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-	// gl.useProgram(distorsherShader.program);
-	// gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+const changeImage = async (gl, imageIndex) => {
+	if (
+		!Number.isSafeInteger(imageIndex) || imageIndex < 0 ||
+		imageIndex >= images.length || currentImageIndex === imageIndex
+	) {
+		return;
+	}
+	currentImageIndex = imageIndex;
+	let image = await new Promise((resolve) => {
+		const result = new Image();
+		result.onload = function () {
+			resolve(result)
+		};
+		result.src = `images/${images[imageIndex]}`;
+	});
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+	if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+		gl.generateMipmap(gl.TEXTURE_2D);
+	} else {
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	}
 };
 
 (async () => {
@@ -84,24 +107,6 @@ const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, p
 			uSamplerOriginal: gl.getUniformLocation(normalizerFilter, 'uSamplerOriginal'),
 		},
 	};
-	const distorsherFilter = initShader(gl,
-		(await axios.get('shaders/distorsher/vect.glsl')).data,
-		(await axios.get('shaders/distorsher/frag.glsl')).data,
-		SHADER_CONFIG
-	);
-	const distorsherShader = {
-		program: distorsherFilter,
-		attribLocations: {
-			vertexPosition: gl.getAttribLocation(distorsherFilter, 'aVertexPosition'),
-			textureCoord: gl.getAttribLocation(distorsherFilter, 'aTextureCoord'),
-		},
-		uniformLocations: {
-			projectionMatrix: gl.getUniformLocation(distorsherFilter, 'uProjectionMatrix'),
-			modelViewMatrix: gl.getUniformLocation(distorsherFilter, 'uModelViewMatrix'),
-			uSamplerNormalize: gl.getUniformLocation(distorsherFilter, 'uSamplerNormalize'),
-			uSamplerOriginal: gl.getUniformLocation(distorsherFilter, 'uSamplerOriginal'),
-		},
-	};
 	buffers = initBuffers(gl);
 
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -125,7 +130,7 @@ const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, p
 	});
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-	[interpolateShader, normalizerShader, distorsherShader].forEach((shader) => {
+	[interpolateShader, normalizerShader].forEach((shader) => {
 		gl.useProgram(shader.program);
 		gl.uniformMatrix4fv(shader.uniformLocations.projectionMatrix, false, projectionMatrix);
 		gl.uniformMatrix4fv(shader.uniformLocations.modelViewMatrix, false, modelViewMatrix);
@@ -135,7 +140,7 @@ const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, p
 	interpolationTargetTexture = interpolationTarget.targetTexture;
 	interpolationTargetFrameBuffer = interpolationTarget.targetFrameBuffer;
 
-	const texture1 = await loadTexture(gl, 'images/texture3.png'); // 1
+	texture = await loadTexture(gl, `images/${images[currentImageIndex]}`); // 1
 
 	gl.useProgram(normalizerShader.program);
 	gl.uniform1i(normalizerShader.uniformLocations.uSamplerInterpolated, 0);
@@ -144,11 +149,15 @@ const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, p
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, interpolationTargetTexture);
 	gl.activeTexture(gl.TEXTURE1);
-	gl.bindTexture(gl.TEXTURE_2D, texture1);
+	gl.bindTexture(gl.TEXTURE_2D, texture);
 
 	let posses = [];
 	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
 		posses.push(Math.random() * Math.PI * 2);
 	}
-	setInterval(() => render(gl, { interpolateShader, normalizerShader, distorsherShader }, posses), 17);
+	canvas.onclick = (e) => {
+		e.preventDefault();
+		changeImage(gl, (currentImageIndex + 1) % images.length);
+	};
+	setInterval(() => render(gl, { interpolateShader, normalizerShader }, posses), 17);
 })();
