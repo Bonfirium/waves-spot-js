@@ -1,11 +1,13 @@
 const axios = require('axios');
 const { init: initShader } = require('./shader');
 const { init: initBuffers } = require('./buffers');
-const { load: loadTexture } = require('./texture');
+const { load: loadTexture, initTarget: initTargetTexture } = require('./texture');
 const { mat4 } = require('gl-matrix');
 
-let targetTexture = null;
-let targetFrameBuffer = null;
+let interpolationTargetTexture = null;
+let interpolationTargetFrameBuffer = null;
+let normalizerTargetTexture = null;
+let normalizerTargetFrameBuffer = null;
 let buffers = null;
 let projectionMatrix = null;
 let modelViewMatrix = null;
@@ -20,21 +22,24 @@ SHADER_CONFIG.$LESS_WIDTH$ = SHADER_CONFIG.$WIDTH$ - 1;
 SHADER_CONFIG.$LESS_HEIGHT$ = SHADER_CONFIG.$HEIGHT$ - 1;
 SHADER_CONFIG.$AREA_1$ = SHADER_CONFIG.$WIDTH_1$ * SHADER_CONFIG.$HEIGHT_1$;
 
-const render = (gl, { interpolateShader, combinationShader }, posses) => {
+const render = (gl, { interpolateShader, normalizerShader, distorsherShader }, posses) => {
 	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
-		posses[i] += Math.random() * Math.PI / 60;
+		posses[i] += Math.random() * Math.PI / 8;
 	}
-	gl.bindFramebuffer(gl.FRAMEBUFFER, targetFrameBuffer);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, interpolationTargetFrameBuffer);
+	// gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.useProgram(interpolateShader.program);
-	{
-		gl.uniform1fv(interpolateShader.uniformLocations.uHeights, new Float32Array(posses.map((pos) => Math.sin(pos) / 2 + 0.5)));
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-	}
+	gl.uniform1fv(interpolateShader.uniformLocations.uHeights, new Float32Array(posses.map((pos) => Math.sin(pos) / 2 + 0.5)));
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// gl.bindFramebuffer(gl.FRAMEBUFFER, normalizerTargetFrameBuffer);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-	gl.useProgram(combinationShader.program);
-	{
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-	}
+	gl.useProgram(normalizerShader.program);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	// gl.useProgram(distorsherShader.program);
+	// gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 };
 
 (async () => {
@@ -75,7 +80,26 @@ const render = (gl, { interpolateShader, combinationShader }, posses) => {
 		uniformLocations: {
 			projectionMatrix: gl.getUniformLocation(normalizerFilter, 'uProjectionMatrix'),
 			modelViewMatrix: gl.getUniformLocation(normalizerFilter, 'uModelViewMatrix'),
-			uSampler: gl.getUniformLocation(normalizerFilter, 'uSampler'),
+			uSamplerInterpolated: gl.getUniformLocation(normalizerFilter, 'uSamplerInterpolated'),
+			uSamplerOriginal: gl.getUniformLocation(normalizerFilter, 'uSamplerOriginal'),
+		},
+	};
+	const distorsherFilter = initShader(gl,
+		(await axios.get('shaders/distorsher/vect.glsl')).data,
+		(await axios.get('shaders/distorsher/frag.glsl')).data,
+		SHADER_CONFIG
+	);
+	const distorsherShader = {
+		program: distorsherFilter,
+		attribLocations: {
+			vertexPosition: gl.getAttribLocation(distorsherFilter, 'aVertexPosition'),
+			textureCoord: gl.getAttribLocation(distorsherFilter, 'aTextureCoord'),
+		},
+		uniformLocations: {
+			projectionMatrix: gl.getUniformLocation(distorsherFilter, 'uProjectionMatrix'),
+			modelViewMatrix: gl.getUniformLocation(distorsherFilter, 'uModelViewMatrix'),
+			uSamplerNormalize: gl.getUniformLocation(distorsherFilter, 'uSamplerNormalize'),
+			uSamplerOriginal: gl.getUniformLocation(distorsherFilter, 'uSamplerOriginal'),
 		},
 	};
 	buffers = initBuffers(gl);
@@ -101,53 +125,30 @@ const render = (gl, { interpolateShader, combinationShader }, posses) => {
 	});
 
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-	[interpolateShader, normalizerShader].forEach((shader) => {
+	[interpolateShader, normalizerShader, distorsherShader].forEach((shader) => {
 		gl.useProgram(shader.program);
 		gl.uniformMatrix4fv(shader.uniformLocations.projectionMatrix, false, projectionMatrix);
 		gl.uniformMatrix4fv(shader.uniformLocations.modelViewMatrix, false, modelViewMatrix);
 	});
 
-	targetTexture = gl.createTexture();
-	gl.uniform1i(normalizerShader.uniformLocations.uSamplerCombiner, 0);
-	gl.bindTexture(gl.TEXTURE_2D, targetTexture);
-	{
-		const level = 0;
-		const internalFormat = gl.RGBA;
-		const border = 0;
-		const format = gl.RGBA;
-		const type = gl.UNSIGNED_BYTE;
-		const data = null;
-		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 256, 256, border, format, type, data);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	}
+	let interpolationTarget = initTargetTexture(gl); // 0
+	interpolationTargetTexture = interpolationTarget.targetTexture;
+	interpolationTargetFrameBuffer = interpolationTarget.targetFrameBuffer;
 
-	targetFrameBuffer = gl.createFramebuffer();
-	gl.bindFramebuffer(gl.FRAMEBUFFER, targetFrameBuffer);
-	const attachmentPoint = gl.COLOR_ATTACHMENT0;
-	const level = 0;
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, targetTexture, level);
-
-	// const texture1 = await loadTexture(gl, 'images/texture1.png');
-	// const texture2 = await loadTexture(gl, 'images/texture2.png');
+	const texture1 = await loadTexture(gl, 'images/texture1.png'); // 1
 
 	gl.useProgram(normalizerShader.program);
-	gl.uniform1i(normalizerShader.uniformLocations.uSampler, 0);
-	// gl.uniform1i(normalizerShader.uniformLocations.uSampler1, 1);
-	// gl.uniform1i(normalizerShader.uniformLocations.uSampler2, 2);
+	gl.uniform1i(normalizerShader.uniformLocations.uSamplerInterpolated, 0);
+	gl.uniform1i(normalizerShader.uniformLocations.uSamplerOriginal, 1);
 
 	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, targetTexture);
-	// gl.activeTexture(gl.TEXTURE1);
-	// gl.bindTexture(gl.TEXTURE_2D, texture1);
-	// gl.activeTexture(gl.TEXTURE2);
-	// gl.bindTexture(gl.TEXTURE_2D, texture2);
+	gl.bindTexture(gl.TEXTURE_2D, interpolationTargetTexture);
+	gl.activeTexture(gl.TEXTURE1);
+	gl.bindTexture(gl.TEXTURE_2D, texture1);
 
 	let posses = [];
 	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
 		posses.push(Math.random() * Math.PI * 2);
 	}
-	setInterval(() => render(gl, { interpolateShader, combinationShader: normalizerShader }, posses), 17);
+	setInterval(() => render(gl, { interpolateShader, normalizerShader, distorsherShader }, posses), 17);
 })();

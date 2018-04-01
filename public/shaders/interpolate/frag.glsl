@@ -11,22 +11,26 @@ float getData(int id) {
 	}
 }
 
+float cosine_interpolate(in float a, in float b, in float x) {
+	float ft = x * 3.1415926535;
+	float f = (1.0 - cos(ft)) * 0.5;
+	return a * (1.0 - f) + b * f;
+}
+
 void main(void) {
 	float xx = vTextureCoord.x * $WIDTH$f;
 	float xf = min($LESS_WIDTH$f, floor(xx));
+	float xf1 = xf + 1.0;
 	int x = int(xf);
 	float dx = xx - xf;
 	float yy = vTextureCoord.y * $HEIGHT$f;
 	float yf = min($LESS_HEIGHT$f, floor(yy));
 	int y = int(yf);
 	int y5 = y * $HEIGHT_1$i;
-	float fx00 = getData(x + y5);
-	float fx10 = getData(x + 1 + y5);
-	float h0 = fx00 + dx * (fx10 - fx00);
-	float fx01 = getData(x + y5 + $HEIGHT_1$i);
-	float fx11 = getData(x + 1 + y5 + $HEIGHT_1$i);
-	float h1 = fx01 + dx * (fx11 - fx01);
-	float h = h0 + (yy - yf) * (h1 - h0);
+	float h0 = cosine_interpolate(getData(x + y5), getData(x + 1 + y5), dx);
+	float h1 = cosine_interpolate(getData(x + y5 + $HEIGHT_1$i), getData(x + 1 + y5 + $HEIGHT_1$i), dx);
+	float h = cosine_interpolate(h0, h1, yy - yf);
 //	gl_FragColor = texture2D(uSampler, vTextureCoord);
+//	gl_FragColor = vec4(h, h, h, 1.0);
 	gl_FragColor = vec4(h, h, h, 1.0);
 }
