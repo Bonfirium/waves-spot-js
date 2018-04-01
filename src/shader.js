@@ -4,7 +4,6 @@ const loadShader = (gl, type, source, config) => {
 		source = source.split(`${configName}f`).join(config[configName].toFixed(8));
 		source = source.split(`${configName}i`).join(config[configName]);
 	});
-	console.log(source);
 	const shader = gl.createShader(type);
 	gl.shaderSource(shader, source);
 	gl.compileShader(shader);
