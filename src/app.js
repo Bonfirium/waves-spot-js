@@ -23,7 +23,6 @@ const render = (gl, { interpolateShader, combinationShader }, heights) => {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.useProgram(combinationShader.program);
 	{
-		gl.bindTexture(gl.TEXTURE_2D, targetTexture);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 	}
 };
@@ -48,7 +47,6 @@ const render = (gl, { interpolateShader, combinationShader }, heights) => {
 		uniformLocations: {
 			projectionMatrix: gl.getUniformLocation(interpolateFilter, 'uProjectionMatrix'),
 			modelViewMatrix: gl.getUniformLocation(interpolateFilter, 'uModelViewMatrix'),
-			uSampler: gl.getUniformLocation(interpolateFilter, 'uSampler'),
 			uHeights: gl.getUniformLocation(interpolateFilter, 'uHeights'),
 		},
 	};
@@ -65,11 +63,12 @@ const render = (gl, { interpolateShader, combinationShader }, heights) => {
 		uniformLocations: {
 			projectionMatrix: gl.getUniformLocation(combinationFilter, 'uProjectionMatrix'),
 			modelViewMatrix: gl.getUniformLocation(combinationFilter, 'uModelViewMatrix'),
-			uSampler: gl.getUniformLocation(combinationFilter, 'uSampler'),
+			uSampler1: gl.getUniformLocation(combinationFilter, 'uSampler1'),
+			uSampler2: gl.getUniformLocation(combinationFilter, 'uSampler2'),
+			uSamplerCombiner: gl.getUniformLocation(combinationFilter, 'uSamplerCombiner'),
 		},
 	};
 	buffers = initBuffers(gl);
-	// const texture = await loadTexture(gl, 'images/back.png');
 
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.clearDepth(1.0);
@@ -99,7 +98,7 @@ const render = (gl, { interpolateShader, combinationShader }, heights) => {
 	});
 
 	targetTexture = gl.createTexture();
-	gl.uniform1i(combinationShader.uniformLocations.uSampler, 0);
+	gl.uniform1i(combinationShader.uniformLocations.uSamplerCombiner, 0);
 	gl.bindTexture(gl.TEXTURE_2D, targetTexture);
 	{
 		const level = 0;
@@ -120,8 +119,22 @@ const render = (gl, { interpolateShader, combinationShader }, heights) => {
 	const attachmentPoint = gl.COLOR_ATTACHMENT0;
 	const level = 0;
 	gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, targetTexture, level);
-	// gl.activeTexture(gl.TEXTURE0);
-	// gl.bindTexture(gl.TEXTURE_2D, texture);
+
+	const texture1 = await loadTexture(gl, 'images/texture1.png');
+	const texture2 = await loadTexture(gl, 'images/texture2.png');
+
+	gl.useProgram(combinationShader.program);
+	gl.uniform1i(combinationShader.uniformLocations.uSamplerCombiner, 0);
+	gl.uniform1i(combinationShader.uniformLocations.uSampler1, 1);
+	gl.uniform1i(combinationShader.uniformLocations.uSampler2, 2);
+
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, targetTexture);
+	gl.activeTexture(gl.TEXTURE1);
+	gl.bindTexture(gl.TEXTURE_2D, texture1);
+	gl.activeTexture(gl.TEXTURE2);
+	gl.bindTexture(gl.TEXTURE_2D, texture2);
+
 	let heights = [];
 	for (let i = 0; i < 25; i++) {
 		heights.push(Math.random());
