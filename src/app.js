@@ -20,13 +20,14 @@ SHADER_CONFIG.$LESS_WIDTH$ = SHADER_CONFIG.$WIDTH$ - 1;
 SHADER_CONFIG.$LESS_HEIGHT$ = SHADER_CONFIG.$HEIGHT$ - 1;
 SHADER_CONFIG.$AREA_1$ = SHADER_CONFIG.$WIDTH_1$ * SHADER_CONFIG.$HEIGHT_1$;
 
-const images = ['texture1.png', 'texture2.png', 'texture3.png'];
+const images = ['texture1.png', 'texture2.png', 'texture3.png', 'texture4.png', 'texture5.png', 'texture6.png'];
 let currentImageIndex = 1;
 let texture = null;
 
-const render = (gl, { interpolateShader, normalizerShader }, posses) => {
+const render = (gl, { interpolateShader, normalizerShader }, posses, spds) => {
 	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
-		posses[i] += Math.random() * Math.PI / 13;
+		spds[i] = Math.min(0.16, Math.max(-0.16, spds[i] + (Math.random() - 0.5) * 0.04));
+		posses[i] += spds[i];
 	}
 	gl.bindFramebuffer(gl.FRAMEBUFFER, interpolationTargetFrameBuffer);
 	// gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -109,7 +110,7 @@ const changeImage = async (gl, imageIndex) => {
 	};
 	buffers = initBuffers(gl);
 
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clearColor(0.0, 0.0, 0.0, 0.0);
 	gl.clearDepth(1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
@@ -155,9 +156,17 @@ const changeImage = async (gl, imageIndex) => {
 	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
 		posses.push(Math.random() * Math.PI * 2);
 	}
-	canvas.onclick = (e) => {
+	let spds = [];
+	for (let i = 0; i < SHADER_CONFIG.$AREA_1$; i++) {
+		spds.push((Math.random() - 0.5) * 0.16);
+	}
+	document.querySelector('#btnNext').onclick = (e) => {
 		e.preventDefault();
 		changeImage(gl, (currentImageIndex + 1) % images.length);
 	};
-	setInterval(() => render(gl, { interpolateShader, normalizerShader }, posses), 17);
+	document.querySelector('#btnPrev').onclick = (e) => {
+		e.preventDefault();
+		changeImage(gl, (currentImageIndex + images.length - 1) % images.length);
+	};
+	setInterval(() => render(gl, { interpolateShader, normalizerShader }, posses, spds), 17);
 })();
